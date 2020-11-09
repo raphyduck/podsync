@@ -57,6 +57,10 @@ Here is an example how configuration might look like:
 ```toml
 [server]
 port = 8080
+# Bind a specific IP addresses for server ,"*": bind all IP addresses which is default option, localhost or 127.0.0.1  bind a single IPv4 address
+bind_address = "172.20.10.2" 
+# Specify path for reverse proxy and only [A-Za-z0-9]
+path = "test"
 data_dir = "/app/data" # Don't change if you run podsync via docker
 
 # Tokens from `Access tokens` section
@@ -75,7 +79,7 @@ vimeo = [ # Multiple keys will be rotated.
   quality = "high" # or "low"
   format = "video" # or "audio"
   # custom.cover_art_quality use "high" or "low" to special cover image quality from channel cover default is equal with "quality" and disable when custom.cover_art was set.
-  # custom = { cover_art = "{IMAGE_URL}}", cover_art_quality = "high", category = "TV", subcategories = ["Documentary", "Tech News"], explicit = true, lang = "en" } # Optional feed customizations
+  # custom = { title = "Level1News", description = "News sections of Level1Techs, in a podcast feed!", author = "Level1Tech", cover_art = "{IMAGE_URL}", cover_art_quality = "high", category = "TV", subcategories = ["Documentary", "Tech News"], explicit = true, lang = "en" } # Optional feed customizations
   # max_height = 720 # Optional maximal height of video, example: 720, 1080, 1440, 2160, ...
   # cron_schedule = "@every 12h" # Optional cron expression format. If set then overwrite 'update_period'. See details below
   # filters = { title = "regex for title here", not_title = "regex for negative title match", description = "...", not_description = "..." } # Optional Golang regexp format. If set, then only download matching episodes.
@@ -88,6 +92,7 @@ vimeo = [ # Multiple keys will be rotated.
 
 [downloader]
 self_update = true # Optional, auto update youtube-dl every 24 hours
+timeout = 15 # Timeout in minutes
 
 # Optional log config. If not specified logs to the stdout
 [log]

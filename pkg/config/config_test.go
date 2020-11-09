@@ -30,6 +30,7 @@ dir = "/home/user/db/"
 
 [downloader]
 self_update = true
+timeout = 15
 
 [feeds]
   [feeds.XYZ]
@@ -40,7 +41,16 @@ self_update = true
   quality = "low"
   filters = { title = "regex for title here" }
   clean = { keep_last = 10 }
-  custom = { cover_art = "http://img", cover_art_quality = "high", category = "TV", subcategories = ["1", "2"],  explicit = true, lang = "en" }
+  	[feeds.XYZ.custom]
+	cover_art = "http://img"
+	cover_art_quality = "high"
+	category = "TV"
+	subcategories = ["1", "2"]
+	explicit = true
+	lang = "en"
+	author = "Mrs. Smith (mrs@smith.org)"
+	ownerName = "Mrs. Smith"
+	ownerEmail = "mrs@smith.org"
 `
 	path := setup(t, file)
 	defer os.Remove(path)
@@ -76,12 +86,16 @@ self_update = true
 	assert.EqualValues(t, "TV", feed.Custom.Category)
 	assert.True(t, feed.Custom.Explicit)
 	assert.EqualValues(t, "en", feed.Custom.Language)
+	assert.EqualValues(t, "Mrs. Smith (mrs@smith.org)", feed.Custom.Author)
+	assert.EqualValues(t, "Mrs. Smith", feed.Custom.OwnerName)
+	assert.EqualValues(t, "mrs@smith.org", feed.Custom.OwnerEmail)
 
 	assert.EqualValues(t, feed.Custom.Subcategories, []string{"1", "2"})
 
 	assert.Nil(t, config.Database.Badger)
 
 	assert.True(t, config.Downloader.SelfUpdate)
+	assert.EqualValues(t, 15, config.Downloader.Timeout)
 }
 
 func TestLoadEmptyKeyList(t *testing.T) {
@@ -131,6 +145,31 @@ data_dir = "/data"
 	assert.EqualValues(t, feed.Quality, "high")
 	assert.EqualValues(t, feed.Custom.CoverArtQuality, "high")
 	assert.EqualValues(t, feed.Format, "video")
+}
+
+func TestHttpServerListenAddress(t *testing.T) {
+	const file = `
+[server]
+bind_address = "172.20.10.2"
+port = 8080
+path = "test"
+data_dir = "/data"
+
+[feeds]
+  [feeds.A]
+  url = "https://youtube.com/watch?v=ygIUF678y40"
+
+[database]
+  badger = { truncate = true, file_io = true }
+`
+	path := setup(t, file)
+	defer os.Remove(path)
+
+	config, err := LoadConfig(path)
+	assert.NoError(t, err)
+	require.NotNil(t, config)
+	require.NotNil(t, config.Server.BindAddress)
+	require.NotNil(t, config.Server.Path)
 }
 
 func TestDefaultHostname(t *testing.T) {

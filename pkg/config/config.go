@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"path/filepath"
+	"regexp"
 
 	"github.com/hashicorp/go-multierror"
 	"github.com/naoina/toml"
@@ -64,6 +65,8 @@ type Custom struct {
 	Author          string        `toml:"author"`
 	Title           string        `toml:"title"`
 	Description     string        `toml:"description"`
+	OwnerName       string        `toml:"ownerName"`
+	OwnerEmail      string        `toml:"ownerEmail"`
 }
 
 type Server struct {
@@ -71,6 +74,12 @@ type Server struct {
 	Hostname string `toml:"hostname"`
 	// Port is a server port to listen to
 	Port int `toml:"port"`
+	// Bind a specific IP addresses for server
+	// "*": bind all IP addresses which is default option
+	// localhost or 127.0.0.1  bind a single IPv4 address
+	BindAddress string `toml:"bind_address"`
+	// Specify path for reverse proxy and only [A-Za-z0-9]
+	Path string `toml:"path"`
 	// DataDir is a path to a directory to keep XML feeds and downloaded episodes,
 	// that will be available to user via web server for download.
 	DataDir string `toml:"data_dir"`
@@ -111,6 +120,8 @@ type Log struct {
 type Downloader struct {
 	// SelfUpdate toggles self update every 24 hour
 	SelfUpdate bool `toml:"self_update"`
+	// Timeout in minutes for youtube-dl process to finish download
+	Timeout int `toml:"timeout"`
 }
 
 type Config struct {
@@ -161,8 +172,15 @@ func (c *Config) validate() error {
 		result = multierror.Append(result, errors.New("data directory is required"))
 	}
 
+	if c.Server.Path != "" {
+		var pathReg = regexp.MustCompile(model.PathRegex)
+		if !pathReg.MatchString(c.Server.Path) {
+			result = multierror.Append(result, errors.Errorf("Server handle path must be match %s or empty", model.PathRegex))
+		}
+	}
+
 	if len(c.Feeds) == 0 {
-		result = multierror.Append(result, errors.New("at least one feed must be speficied"))
+		result = multierror.Append(result, errors.New("at least one feed must be specified"))
 	}
 
 	for id, feed := range c.Feeds {
